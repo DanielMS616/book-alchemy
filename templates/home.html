@@ -20,6 +20,12 @@
   <div>
     <h2>{{ book.title }}</h2>
 
+    <img
+      src="https://covers.openlibrary.org/b/isbn/{{ book.isbn }}-M.jpg"
+      alt="Cover of {{ book.title }}"
+      width="150"
+    >
+
     <p>
       Author: {{ book.author.name }}
     </p>
