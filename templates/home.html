@@ -9,6 +9,10 @@
 
   <h1>My Library</h1>
 
+  {% if success_message %}
+    <p>{{ success_message }}</p>
+  {% endif %}
+
   <form action="/" method="GET">
     <label for="search">Search by title:</label>
 
@@ -53,6 +57,13 @@
         <p>
           Publication Year: {{ book.publication_year }}
         </p>
+
+        <form
+          action="{{ url_for('delete_book', book_id=book.id) }}"
+          method="POST"
+        >
+          <button type="submit">Delete Book</button>
+        </form>
       </div>
     {% endfor %}
   {% endif %}

@@ -1,7 +1,7 @@
 import os
 
 from datetime import datetime
-from flask import Flask, render_template, request
+from flask import Flask, redirect, render_template, request, url_for
 
 from data_models import db, Author, Book
 
@@ -118,6 +118,52 @@ def add_book():
     )
 
 
+@app.route("/book/<int:book_id>/delete", methods=["POST"])
+def delete_book(book_id):
+    """Deletes a book and removes its author if no other books remain."""
+
+    # Searches for the book using its primary key.
+    book = db.session.get(Book, book_id)
+
+    # Redirects to the homepage if the book does not exist.
+    if book is None:
+        return redirect(
+            url_for(
+                "home",
+                success="Book could not be found."
+            )
+        )
+
+    # Stores information that is still needed after deleting the book.
+    book_title = book.title
+    author = book.author
+
+    # Searches for another book written by the same author.
+    # The current book is excluded from this query.
+    another_book = Book.query.filter(
+        Book.author_id == author.id,
+        Book.id != book.id
+    ).first()
+
+    # Marks the selected book for deletion.
+    db.session.delete(book)
+
+    # If no other book by this author exists,
+    # the author is also removed from the database.
+    if another_book is None:
+        db.session.delete(author)
+
+    # Saves both deletions together.
+    db.session.commit()
+
+    return redirect(
+        url_for(
+            "home",
+            success=f'"{book_title}" was successfully deleted.'
+        )
+    )
+
+
 @app.route("/")
 def home():
     """Displays books and allows sorting and searching by title."""
@@ -132,6 +178,9 @@ def home():
     # Starts a query for the books table.
     # The query is not executed yet.
     books_query = Book.query
+
+    # Reads a success message that may have been added during a redirect.
+    success_message = request.args.get("success")
 
     if search_query:
         # LIKE searches for the entered text anywhere in the title.
@@ -165,7 +214,8 @@ def home():
         "home.html",
         books=books,
         search_query=search_query,
-        message=message
+        message=message,
+        success_message=success_message
     )
 
 
