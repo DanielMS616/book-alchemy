@@ -9,6 +9,19 @@
 
   <h1>My Library</h1>
 
+  <form action="/" method="GET">
+    <label for="search">Search by title:</label>
+
+    <input
+      type="text"
+      id="search"
+      name="search"
+      value="{{ search_query }}"
+    >
+
+    <button type="submit">Search</button>
+  </form>
+
   <p>
     Sort by:
     <a href="/?sort=title">Title</a>
@@ -16,29 +29,33 @@
     <a href="/?sort=author">Author</a>
   </p>
 
-  {% for book in books %}
-  <div>
-    <h2>{{ book.title }}</h2>
+  {% if message %}
+    <p>{{ message }}</p>
+  {% else %}
+    {% for book in books %}
+      <div>
+        <h2>{{ book.title }}</h2>
 
-    <img
-      src="https://covers.openlibrary.org/b/isbn/{{ book.isbn }}-M.jpg"
-      alt="Cover of {{ book.title }}"
-      width="150"
-    >
+        <img
+          src="https://covers.openlibrary.org/b/isbn/{{ book.isbn }}-M.jpg"
+          alt="Cover of {{ book.title }}"
+          width="150"
+        >
 
-    <p>
-      Author: {{ book.author.name }}
-    </p>
+        <p>
+          Author: {{ book.author.name }}
+        </p>
 
-    <p>
-      ISBN: {{ book.isbn }}
-    </p>
+        <p>
+          ISBN: {{ book.isbn }}
+        </p>
 
-    <p>
-      Publication Year: {{ book.publication_year }}
-    </p>
-  </div>
-{% endfor %}
+        <p>
+          Publication Year: {{ book.publication_year }}
+        </p>
+      </div>
+    {% endfor %}
+  {% endif %}
 
 </body>
 </html>

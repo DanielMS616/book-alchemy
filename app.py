@@ -120,27 +120,52 @@ def add_book():
 
 @app.route("/")
 def home():
-    """Displays all books sorted by title or author."""
+    """Displays books and allows sorting and searching by title."""
+
+    # Reads the search term from the URL.
+    # If no search term exists, an empty string is used.
+    search_query = request.args.get("search", "").strip()
 
     # Reads the selected sorting option from the URL.
-    # If no option is provided, books are sorted by title.
     sort_by = request.args.get("sort", "title")
 
+    # Starts a query for the books table.
+    # The query is not executed yet.
+    books_query = Book.query
+
+    if search_query:
+        # LIKE searches for the entered text anywhere in the title.
+        # The percentage signs are SQL wildcards.
+        books_query = books_query.filter(
+            Book.title.like(f"%{search_query}%")
+        )
+
     if sort_by == "author":
-        # Connects books with their authors and sorts by author name.
-        books = (
-            Book.query
+        # Connects books with authors and sorts by author name.
+        books_query = (
+            books_query
             .join(Author)
             .order_by(Author.name)
-            .all()
         )
     else:
-        # Sorts the books alphabetically by title.
-        books = Book.query.order_by(Book.title).all()
+        # Sorts by book title by default.
+        books_query = books_query.order_by(Book.title)
+
+    # Executes the completed database query.
+    books = books_query.all()
+
+    # Prepares a message if a search was performed
+    # but no matching books were found.
+    message = None
+
+    if search_query and not books:
+        message = f'No books found for "{search_query}".'
 
     return render_template(
         "home.html",
-        books=books
+        books=books,
+        search_query=search_query,
+        message=message
     )
 
 
