@@ -60,3 +60,7 @@ class Book(db.Model):
         db.Integer,
         db.ForeignKey("authors.id")
     )
+
+    # Provides access to the associated Author object.
+    # This is an ORM relationship and not an additional database column.
+    author = db.relationship("Author")

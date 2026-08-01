@@ -1,16 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8">
+  <title>Book Alchemy</title>
+</head>
 
-    {% for book in books %}
-    <div> <h3>{{ book.title }}</h3>
-    </div>
-    {% endfor %}
+<body>
 
-  </body>
+  <h1>My Library</h1>
+
+  <p>
+    Sort by:
+    <a href="/?sort=title">Title</a>
+    |
+    <a href="/?sort=author">Author</a>
+  </p>
+
+  {% for book in books %}
+  <div>
+    <h2>{{ book.title }}</h2>
+
+    <p>
+      Author: {{ book.author.name }}
+    </p>
+
+    <p>
+      ISBN: {{ book.isbn }}
+    </p>
+
+    <p>
+      Publication Year: {{ book.publication_year }}
+    </p>
+  </div>
+{% endfor %}
+
+</body>
 </html>

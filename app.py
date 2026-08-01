@@ -118,6 +118,32 @@ def add_book():
     )
 
 
+@app.route("/")
+def home():
+    """Displays all books sorted by title or author."""
+
+    # Reads the selected sorting option from the URL.
+    # If no option is provided, books are sorted by title.
+    sort_by = request.args.get("sort", "title")
+
+    if sort_by == "author":
+        # Connects books with their authors and sorts by author name.
+        books = (
+            Book.query
+            .join(Author)
+            .order_by(Author.name)
+            .all()
+        )
+    else:
+        # Sorts the books alphabetically by title.
+        books = Book.query.order_by(Book.title).all()
+
+    return render_template(
+        "home.html",
+        books=books
+    )
+
+
 # Creates all database tables defined by the SQLAlchemy models.
 # The application context gives SQLAlchemy access to the Flask configuration.
 # with app.app_context():
