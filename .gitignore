@@ -1,0 +1,24 @@
+# Virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Local SQLite databases
+data/*.sqlite
+
+# Environment variables
+.env
+
+# IDE settings
+.idea/
+.vscode/
+
+# macOS metadata
+.DS_Store
+
+# Codio course configuration and guides
+.codio
+.guides/
+.settings
