@@ -71,6 +71,53 @@ def add_author():
     return render_template("add_author.html")
 
 
+@app.route("/add_book", methods=["GET", "POST"])
+def add_book():
+    """Displays the book form and stores submitted book data."""
+
+    # Loads all authors for the dropdown menu.
+    authors = Author.query.all()
+
+    # A POST request is sent when the book form is submitted.
+    if request.method == "POST":
+        # Reads the submitted values from the form.
+        isbn = request.form.get("isbn")
+        title = request.form.get("title")
+        publication_year = int(
+            request.form.get("publication_year")
+        )
+        author_id = int(
+            request.form.get("author_id")
+        )
+
+        # Creates a new Book object from the submitted form data.
+        new_book = Book(
+            isbn=isbn,
+            title=title,
+            publication_year=publication_year,
+            author_id=author_id
+        )
+
+        # Adds the new book to the current database session.
+        db.session.add(new_book)
+
+        # Permanently saves the book in the database.
+        db.session.commit()
+
+        # Displays the form again with a success message.
+        return render_template(
+            "add_book.html",
+            authors=authors,
+            message="Book successfully added."
+        )
+
+    # A GET request only displays the form.
+    return render_template(
+        "add_book.html",
+        authors=authors
+    )
+
+
 # Creates all database tables defined by the SQLAlchemy models.
 # The application context gives SQLAlchemy access to the Flask configuration.
 # with app.app_context():
