@@ -1,13 +1,17 @@
 import os
 
 from datetime import datetime
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, request, url_for
 
 from data_models import db, Author, Book
 
 
 # Creates the Flask application.
 app = Flask(__name__)
+
+# Flask uses the secret key to protect session data,
+# including temporary flash messages.
+app.config["SECRET_KEY"] = "book-alchemy-secret-key"
 
 # Determines the absolute path of the project directory.
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -25,21 +29,20 @@ db.init_app(app)
 def add_author():
     """Displays the author form and stores submitted author data."""
 
-    # A POST request is sent when the user submits the HTML form.
+    # A POST request is sent when the author form is submitted.
     if request.method == "POST":
-        # Reads the values from the form fields.
+        # Reads the submitted values from the form.
         name = request.form.get("name")
         birthdate_value = request.form.get("birthdate")
         date_of_death_value = request.form.get("date_of_death")
 
-        # Converts the required birthdate string into a Python date object.
+        # Converts the birthdate string into a Python date object.
         birth_date = datetime.strptime(
             birthdate_value,
             "%Y-%m-%d"
         ).date()
 
-        # The date of death field is optional.
-        # If it is empty, None is stored in the database.
+        # An empty date-of-death field is stored as None.
         date_of_death = None
 
         if date_of_death_value:
@@ -48,26 +51,24 @@ def add_author():
                 "%Y-%m-%d"
             ).date()
 
-        # Creates a new Author object with the submitted form data.
+        # Creates a new Author object.
         new_author = Author(
             name=name,
             birth_date=birth_date,
             date_of_death=date_of_death
         )
 
-        # Adds the new object to the current database session.
+        # Saves the new author in the database.
         db.session.add(new_author)
-
-        # Permanently saves the new author in the database.
         db.session.commit()
 
-        # Displays the form again together with a success message.
-        return render_template(
-            "add_author.html",
-            message="Author successfully added."
-        )
+        # Stores a temporary success message.
+        flash(f'Author "{name}" was successfully added.')
 
-    # A normal GET request only displays the form.
+        # Starts a new GET request for the author form.
+        return redirect(url_for("add_author"))
+
+    # A GET request displays the empty author form.
     return render_template("add_author.html")
 
 
@@ -83,6 +84,8 @@ def add_book():
         # Reads the submitted values from the form.
         isbn = request.form.get("isbn")
         title = request.form.get("title")
+
+        # Form values arrive as strings and are converted to integers.
         publication_year = int(
             request.form.get("publication_year")
         )
@@ -90,7 +93,7 @@ def add_book():
             request.form.get("author_id")
         )
 
-        # Creates a new Book object from the submitted form data.
+        # Creates a new Book object.
         new_book = Book(
             isbn=isbn,
             title=title,
@@ -98,20 +101,17 @@ def add_book():
             author_id=author_id
         )
 
-        # Adds the new book to the current database session.
+        # Saves the new book in the database.
         db.session.add(new_book)
-
-        # Permanently saves the book in the database.
         db.session.commit()
 
-        # Displays the form again with a success message.
-        return render_template(
-            "add_book.html",
-            authors=authors,
-            message="Book successfully added."
-        )
+        # Stores a temporary success message.
+        flash(f'Book "{title}" was successfully added.')
 
-    # A GET request only displays the form.
+        # Starts a new GET request for the book form.
+        return redirect(url_for("add_book"))
+
+    # A GET request displays the form and its author dropdown.
     return render_template(
         "add_book.html",
         authors=authors
@@ -125,21 +125,17 @@ def delete_book(book_id):
     # Searches for the book using its primary key.
     book = db.session.get(Book, book_id)
 
-    # Redirects to the homepage if the book does not exist.
+    # Handles the case that the requested book does not exist.
     if book is None:
-        return redirect(
-            url_for(
-                "home",
-                success="Book could not be found."
-            )
-        )
+        flash("Book could not be found.")
+        return redirect(url_for("home"))
 
-    # Stores information that is still needed after deleting the book.
+    # Stores information needed after deleting the book.
     book_title = book.title
     author = book.author
 
     # Searches for another book written by the same author.
-    # The current book is excluded from this query.
+    # The book currently being deleted is excluded.
     another_book = Book.query.filter(
         Book.author_id == author.id,
         Book.id != book.id
@@ -148,20 +144,18 @@ def delete_book(book_id):
     # Marks the selected book for deletion.
     db.session.delete(book)
 
-    # If no other book by this author exists,
-    # the author is also removed from the database.
+    # Removes the author if no other book by this author remains.
     if another_book is None:
         db.session.delete(author)
 
-    # Saves both deletions together.
+    # Permanently saves all changes.
     db.session.commit()
 
-    return redirect(
-        url_for(
-            "home",
-            success=f'"{book_title}" was successfully deleted.'
-        )
-    )
+    # Stores a temporary message for the next request.
+    flash(f'"{book_title}" was successfully deleted.')
+
+    # Redirects to the library homepage.
+    return redirect(url_for("home"))
 
 
 @app.route("/")
@@ -178,9 +172,6 @@ def home():
     # Starts a query for the books table.
     # The query is not executed yet.
     books_query = Book.query
-
-    # Reads a success message that may have been added during a redirect.
-    success_message = request.args.get("success")
 
     if search_query:
         # LIKE searches for the entered text anywhere in the title.
@@ -214,8 +205,7 @@ def home():
         "home.html",
         books=books,
         search_query=search_query,
-        message=message,
-        success_message=success_message
+        message=message
     )
 
 
