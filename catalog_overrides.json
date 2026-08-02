@@ -1,0 +1,102 @@
+[
+  {
+    "isbn": "9781454959885",
+    "title": "War and Peace",
+    "author_name": "Leo Tolstoy"
+  },
+  {
+    "isbn": "9798589232837",
+    "title": "Madame Bovary",
+    "author_name": "Gustave Flaubert"
+  },
+  {
+    "isbn": "9788418008412",
+    "title": "Moby-Dick",
+    "author_name": "Herman Melville"
+  },
+  {
+    "isbn": "9798560688646",
+    "title": "Frankenstein",
+    "author_name": "Mary Shelley"
+  },
+  {
+    "isbn": "9782070500178",
+    "title": "The War of the Worlds",
+    "author_name": "H. G. Wells"
+  },
+  {
+    "isbn": "9782207250549",
+    "title": "A Canticle for Leibowitz",
+    "author_name": "Walter M. Miller Jr."
+  },
+  {
+    "isbn": "9788445075715",
+    "title": "The Martian Chronicles",
+    "author_name": "Ray Bradbury"
+  },
+  {
+    "isbn": "9789643114190",
+    "title": "The Handmaid's Tale",
+    "author_name": "Margaret Atwood"
+  },
+  {
+    "isbn": "9781637992562",
+    "title": "The Three-Body Problem",
+    "author_name": "Cixin Liu"
+  },
+  {
+    "isbn": "9788426734679",
+    "title": "Designing Data-Intensive Applications",
+    "author_name": "Martin Kleppmann"
+  },
+  {
+    "isbn": "9781933499093",
+    "title": "The Tipping Point",
+    "author_name": "Malcolm Gladwell"
+  },
+  {
+    "isbn": "9780807067994",
+    "title": "Man's Search for Meaning",
+    "author_name": "Viktor E. Frankl"
+  },
+  {
+    "isbn": "9780582417762",
+    "title": "The Diary of a Young Girl",
+    "author_name": "Anne Frank"
+  },
+  {
+    "isbn": "9788901116150",
+    "title": "The Girl with the Dragon Tattoo",
+    "author_name": "Stieg Larsson"
+  },
+  {
+    "isbn": "9782724253269",
+    "title": "The Silence of the Lambs",
+    "author_name": "Thomas Harris"
+  },
+  {
+    "isbn": "9788497870801",
+    "title": "The Da Vinci Code",
+    "author_name": "Dan Brown"
+  },
+  {
+    "isbn": "9788492966660",
+    "title": "The Murder of Roger Ackroyd",
+    "author_name": "Agatha Christie"
+  },
+  {
+    "isbn": "9798520692737",
+    "title": "The Hound of the Baskervilles",
+    "author_name": "Arthur Conan Doyle"
+  },
+  {
+    "isbn": "9781546597803",
+    "title": "The Odyssey",
+    "author_name": "Homer"
+  },
+  {
+    "isbn": "9780544176560",
+    "title": "The Name of the Rose",
+    "author_name": "Umberto Eco"
+  }
+]
