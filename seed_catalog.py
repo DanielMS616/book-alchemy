@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from time import sleep
 
 from app import app
@@ -7,149 +9,109 @@ from open_library_service import (
     download_cover_image,
     fetch_author_by_key,
     fetch_edition_by_isbn,
-    fetch_work_by_key
+    fetch_work_by_key,
+    select_isbn
 )
 
 
-# Defines the books that should be added to the local catalog.
-# Each dictionary contains information that we assign ourselves
-# or cannot currently retrieve reliably from the direct API endpoints.
-SEED_BOOKS = [
-    # Classics
-    {
-        "isbn": "9780451524935",
-        "category": "Classics",
-        "original_publication_year": 1949
-    },
-    {
-        "isbn": "9780316769488",
-        "category": "Classics",
-        "original_publication_year": 1951
-    },
-    {
-        "isbn": "9780451526342",
-        "category": "Classics",
-        "original_publication_year": 1945
-    },
-    {
-        "isbn": "9780141439518",
-        "category": "Classics",
-        "original_publication_year": 1813
-    },
-    {
-        "isbn": "9780743273565",
-        "category": "Classics",
-        "original_publication_year": 1925
-    },
-    {
-        "isbn": "9780061120084",
-        "category": "Classics",
-        "original_publication_year": 1960
-    },
+# Absolute path to the JSON file containing the catalog seed data.
+SEED_DATA_FILE = (
+    Path(__file__).resolve().parent
+    / "catalog_seed_data.json"
+)
 
-    # Science Fiction
-    {
-        "isbn": "9780060850524",
-        "category": "Science Fiction",
-        "original_publication_year": 1932
-    },
-    {
-        "isbn": "9781451673319",
-        "category": "Science Fiction",
-        "original_publication_year": 1953
-    },
-    {
-        "isbn": "9780441172719",
-        "category": "Science Fiction",
-        "original_publication_year": 1965
-    },
-    {
-        "isbn": "9780441569595",
-        "category": "Science Fiction",
-        "original_publication_year": 1984
-    },
-    {
-        "isbn": "9780345404473",
-        "category": "Science Fiction",
-        "original_publication_year": 1968
-    },
-    {
-        "isbn": "9780441478125",
-        "category": "Science Fiction",
-        "original_publication_year": 1969
-    },
 
-    # Fantasy
-    {
-        "isbn": "9780547928227",
-        "category": "Fantasy",
-        "original_publication_year": 1937
-    },
-    {
-        "isbn": "9780547928210",
-        "category": "Fantasy",
-        "original_publication_year": 1954
-    },
-    {
-        "isbn": "9780547773742",
-        "category": "Fantasy",
-        "original_publication_year": 1968
-    },
-    {
-        "isbn": "9780756404741",
-        "category": "Fantasy",
-        "original_publication_year": 2007
-    },
-    {
-        "isbn": "9780765311788",
-        "category": "Fantasy",
-        "original_publication_year": 2006
-    },
+def validate_seed_book(seed_data, position):
+    """Validates and normalizes one catalog seed entry."""
 
-    # Software Development
-    {
-        "isbn": "9780132350884",
-        "category": "Software Development",
-        "original_publication_year": 2008
-    },
-    {
-        "isbn": "9780135957059",
-        "category": "Software Development",
-        "original_publication_year": 1999
-    },
-    {
-        "isbn": "9780201633610",
-        "category": "Software Development",
-        "original_publication_year": 1994
-    },
-    {
-        "isbn": "9780134757599",
-        "category": "Software Development",
-        "original_publication_year": 1999
-    },
+    # Every JSON array entry must represent one dictionary.
+    if not isinstance(seed_data, dict):
+        raise ValueError(
+            f"Seed entry {position} must be a JSON object."
+        )
 
-    # Non-Fiction and Biography
-    {
-        "isbn": "9780735211292",
-        "category": "Non-Fiction",
-        "original_publication_year": 2018
-    },
-    {
-        "isbn": "9780062316097",
-        "category": "Non-Fiction",
-        "original_publication_year": 2011
-    },
-    {
-        "isbn": "9780374533557",
-        "category": "Non-Fiction",
-        "original_publication_year": 2011
-    },
-    {
-        "isbn": "9781451648539",
-        "category": "Biography",
-        "original_publication_year": 2011
-    }
-]
+    isbn = seed_data.get("isbn")
+
+    # select_isbn() removes spaces and hyphens and checks
+    # whether the value resembles an ISBN-10 or ISBN-13.
+    normalized_isbn = select_isbn([isbn])
+
+    if normalized_isbn is None:
+        raise ValueError(
+            f"Seed entry {position} contains an invalid ISBN."
+        )
+
+    category = seed_data.get("category")
+
+    if not isinstance(category, str) or not category.strip():
+        raise ValueError(
+            f"Seed entry {position} requires a category."
+        )
+
+    original_publication_year = seed_data.get(
+        "original_publication_year"
+    )
+
+    # bool must be rejected explicitly because Python treats
+    # True and False as subclasses of int.
+    if (
+        original_publication_year is not None
+        and (
+            isinstance(original_publication_year, bool)
+            or not isinstance(original_publication_year, int)
+            or original_publication_year <= 0
+        )
+    ):
+        raise ValueError(
+            f"Seed entry {position} contains an invalid "
+            "original publication year."
+        )
+
+    # A copy is returned so that the original dictionary
+    # loaded from the JSON file is not modified directly.
+    validated_seed_data = seed_data.copy()
+
+    validated_seed_data["isbn"] = normalized_isbn
+    validated_seed_data["category"] = category.strip()
+
+    return validated_seed_data
+
+
+def load_seed_books():
+    """Loads and validates the catalog seed entries."""
+
+    # Reads the complete JSON file as text.
+    json_content = SEED_DATA_FILE.read_text(
+        encoding="utf-8"
+    )
+
+    # Converts the JSON array into Python data.
+    seed_books = json.loads(json_content)
+
+    # The seed file itself must contain a JSON array.
+    if not isinstance(seed_books, list):
+        raise ValueError(
+            "The catalog seed file must contain a JSON list."
+        )
+
+    validated_seed_books = []
+
+    # enumerate(..., start=1) lets error messages refer
+    # to the human-readable position inside the JSON list.
+    for position, seed_data in enumerate(
+        seed_books,
+        start=1
+    ):
+        validated_seed_book = validate_seed_book(
+            seed_data,
+            position
+        )
+
+        validated_seed_books.append(
+            validated_seed_book
+        )
+
+    return validated_seed_books
 
 
 def add_catalog_book(seed_data):
@@ -279,6 +241,9 @@ def add_catalog_book(seed_data):
 def seed_catalog():
     """Adds all configured seed books to the local catalog."""
 
+    # Loads the seed entries from catalog_seed_data.json.
+    seed_books = load_seed_books()
+
     created_books = 0
     skipped_books = 0
     failed_books = 0
@@ -286,14 +251,14 @@ def seed_catalog():
     # enumerate(..., start=1) returns both the current position
     # and the corresponding seed dictionary.
     for position, seed_data in enumerate(
-        SEED_BOOKS,
+        seed_books,
         start=1
     ):
         isbn = seed_data.get("isbn", "unknown ISBN")
 
         print(
             f"Processing book {position} of "
-            f"{len(SEED_BOOKS)}..."
+            f"{len(seed_books)}..."
         )
 
         try:
@@ -304,7 +269,6 @@ def seed_catalog():
         except Exception as error:
             # A failed database operation can leave the current
             # SQLAlchemy session in an unusable state.
-            # rollback() returns it to the last valid state.
             db.session.rollback()
 
             failed_books += 1
@@ -314,8 +278,7 @@ def seed_catalog():
                 f"{type(error).__name__}: {error}"
             )
 
-            # continue skips the remaining code of this loop
-            # iteration and starts processing the next book.
+            # Continues with the next seed entry.
             continue
 
         if book_was_created:
