@@ -15,11 +15,39 @@ from open_library_service import (
 # Each dictionary contains information that we assign ourselves
 # or cannot currently retrieve reliably from the direct API endpoints.
 SEED_BOOKS = [
+    # Classics
     {
         "isbn": "9780451524935",
         "category": "Classics",
         "original_publication_year": 1949
     },
+    {
+        "isbn": "9780316769488",
+        "category": "Classics",
+        "original_publication_year": 1951
+    },
+    {
+        "isbn": "9780451526342",
+        "category": "Classics",
+        "original_publication_year": 1945
+    },
+    {
+        "isbn": "9780141439518",
+        "category": "Classics",
+        "original_publication_year": 1813
+    },
+    {
+        "isbn": "9780743273565",
+        "category": "Classics",
+        "original_publication_year": 1925
+    },
+    {
+        "isbn": "9780061120084",
+        "category": "Classics",
+        "original_publication_year": 1960
+    },
+
+    # Science Fiction
     {
         "isbn": "9780060850524",
         "category": "Science Fiction",
@@ -31,14 +59,95 @@ SEED_BOOKS = [
         "original_publication_year": 1953
     },
     {
+        "isbn": "9780441172719",
+        "category": "Science Fiction",
+        "original_publication_year": 1965
+    },
+    {
+        "isbn": "9780441569595",
+        "category": "Science Fiction",
+        "original_publication_year": 1984
+    },
+    {
+        "isbn": "9780345404473",
+        "category": "Science Fiction",
+        "original_publication_year": 1968
+    },
+    {
+        "isbn": "9780441478125",
+        "category": "Science Fiction",
+        "original_publication_year": 1969
+    },
+
+    # Fantasy
+    {
         "isbn": "9780547928227",
         "category": "Fantasy",
         "original_publication_year": 1937
     },
     {
-        "isbn": "9780316769488",
-        "category": "Classics",
-        "original_publication_year": 1951
+        "isbn": "9780547928210",
+        "category": "Fantasy",
+        "original_publication_year": 1954
+    },
+    {
+        "isbn": "9780547773742",
+        "category": "Fantasy",
+        "original_publication_year": 1968
+    },
+    {
+        "isbn": "9780756404741",
+        "category": "Fantasy",
+        "original_publication_year": 2007
+    },
+    {
+        "isbn": "9780765311788",
+        "category": "Fantasy",
+        "original_publication_year": 2006
+    },
+
+    # Software Development
+    {
+        "isbn": "9780132350884",
+        "category": "Software Development",
+        "original_publication_year": 2008
+    },
+    {
+        "isbn": "9780135957059",
+        "category": "Software Development",
+        "original_publication_year": 1999
+    },
+    {
+        "isbn": "9780201633610",
+        "category": "Software Development",
+        "original_publication_year": 1994
+    },
+    {
+        "isbn": "9780134757599",
+        "category": "Software Development",
+        "original_publication_year": 1999
+    },
+
+    # Non-Fiction and Biography
+    {
+        "isbn": "9780735211292",
+        "category": "Non-Fiction",
+        "original_publication_year": 2018
+    },
+    {
+        "isbn": "9780062316097",
+        "category": "Non-Fiction",
+        "original_publication_year": 2011
+    },
+    {
+        "isbn": "9780374533557",
+        "category": "Non-Fiction",
+        "original_publication_year": 2011
+    },
+    {
+        "isbn": "9781451648539",
+        "category": "Biography",
+        "original_publication_year": 2011
     }
 ]
 
