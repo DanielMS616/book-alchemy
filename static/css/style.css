@@ -839,3 +839,207 @@ textarea:focus {
     filter: brightness(1.1);
     transform: translateY(-1px);
 }
+
+
+/* ---------- Refined form composition ---------- */
+
+/*
+ * The outer form area uses the complete width of the page shell,
+ * matching the Book Alchemy header and navigation panel.
+ */
+.form-page {
+    width: 100%;
+    margin: 34px 0 0;
+}
+
+
+.form-panel {
+    width: 100%;
+}
+
+
+/*
+ * Only the content inside the large panel is narrowed.
+ * This leaves generous decorative space between the form
+ * and the outer brass-colored frame.
+ */
+.form-intro,
+.entry-form,
+.form-note {
+    width: min(100%, 680px);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+
+.form-intro {
+    margin-bottom: 26px;
+}
+
+
+.entry-form {
+    padding: 4px 8px 6px;
+}
+
+
+.entry-form .form-field,
+.entry-form input,
+.entry-form select,
+.entry-form textarea {
+    width: 100%;
+}
+
+
+.entry-form .form-grid {
+    gap: 20px;
+}
+
+
+/*
+ * On mobile, the form card matches the same width used by
+ * the header and catalog control panels.
+ */
+@media (max-width: 760px) {
+    .form-page {
+        width: 92vw;
+        margin: 24px auto 0;
+    }
+
+
+    .form-panel {
+        padding: 20px 16px;
+    }
+
+
+    .form-intro,
+    .entry-form,
+    .form-note {
+        width: 100%;
+    }
+
+
+    .entry-form {
+        padding-right: 2px;
+        padding-left: 2px;
+    }
+}
+
+
+@media (max-width: 390px) {
+    .form-page {
+        width: 94vw;
+    }
+}
+
+
+/* ---------- Form typography aligned with library and catalog ---------- */
+
+/*
+ * Uses the same serif typography and warm orange color
+ * as the headings on My Library and Book Catalog.
+ */
+.form-intro h1 {
+    margin: 0 0 10px;
+
+    color: #eca466;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: clamp(1.45rem, 3vw, 2rem);
+    font-weight: normal;
+    line-height: 1.2;
+
+    text-shadow: 1px 1px 0 #140d09;
+}
+
+
+/*
+ * The small section label behaves like a subtle
+ * brass-colored catalog heading.
+ */
+.form-eyebrow {
+    margin: 0 0 7px;
+
+    color: var(--brass-light);
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 0.78rem;
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+
+/* Matches the descriptive text used below the catalog heading. */
+.form-intro p {
+    color: var(--cream-muted);
+
+    font-family:
+        "Trebuchet MS",
+        Arial,
+        sans-serif;
+
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
+
+/* Keeps field labels consistent with the search panels. */
+.entry-form label {
+    color: var(--cream);
+
+    font-family:
+        "Trebuchet MS",
+        Arial,
+        sans-serif;
+
+    font-size: 0.88rem;
+    font-weight: bold;
+}
+
+
+/* Secondary information remains visible but visually quieter. */
+.form-hint {
+    color: var(--cream-muted);
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 0.82rem;
+    font-style: italic;
+}
+
+/* Aligns form headings with the catalog and library panels. */
+.form-panel {
+    padding-top: 28px;
+    padding-bottom: 30px;
+}
+
+
+.form-intro {
+    width: min(100%, 680px);
+
+    margin:
+        0
+        auto
+        26px;
+
+    padding: 0;
+}
+
+
+.form-intro h1 {
+    margin:
+        0
+        0
+        10px;
+}
