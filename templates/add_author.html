@@ -2,62 +2,147 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
-  <meta
-    http-equiv="X-UA-Compatible"
-    content="ie=edge"
+
+  <title>Add Author | Book Alchemy</title>
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}"
   >
-  <title>Add Author</title>
 </head>
 
 <body>
+  <div class="page-shell">
+    <header class="site-header forum-panel">
+      <p class="site-title">
+        Book Alchemy
+      </p>
 
-  {% with flashed_messages = get_flashed_messages() %}
-    {% if flashed_messages %}
-      {% for flashed_message in flashed_messages %}
-        <p>{{ flashed_message }}</p>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+      <p class="site-subtitle">
+        A lovingly maintained corner for curious readers,
+        improbable journeys, and dangerously full bookshelves.
+      </p>
 
-  <form action="/add_author" method="POST">
-    <label for="name">Author Name:</label>
-    <input
-      type="text"
-      id="name"
-      name="name"
-      required
-    >
+      <nav
+        class="main-navigation"
+        aria-label="Main navigation"
+      >
+        <a href="{{ url_for('home') }}">
+          My Library
+        </a>
 
-    <br><br>
+        <a href="{{ url_for('catalog') }}">
+          Book Catalog
+        </a>
 
-    <label for="birthdate">Birthdate:</label>
-    <input
-      type="date"
-      id="birthdate"
-      name="birthdate"
-      required
-    >
+        <a href="{{ url_for('add_book') }}">
+          Add Book
+        </a>
 
-    <br><br>
+        <a href="{{ url_for('add_author') }}">
+          Add Author
+        </a>
+      </nav>
+    </header>
 
-    <label for="date_of_death">Date of Death:</label>
-    <input
-      type="date"
-      id="date_of_death"
-      name="date_of_death"
-    >
+    <main class="form-page">
+      {% with flashed_messages = get_flashed_messages() %}
+        {% for flashed_message in flashed_messages %}
+          <p class="flash-message forum-panel">
+            {{ flashed_message }}
+          </p>
+        {% endfor %}
+      {% endwith %}
 
-    <br><br>
+      <section class="form-panel forum-panel">
+        <header class="form-intro">
+          <p class="form-eyebrow">
+            Author Registry
+          </p>
 
-    <input
-      type="submit"
-      value="Add Author"
-    >
-  </form>
+          <h1>
+            Add a New Author
+          </h1>
 
+          <p>
+            Create an author record before assigning manually
+            entered books to your personal library.
+          </p>
+        </header>
+
+        <form
+          class="entry-form"
+          action="{{ url_for('add_author') }}"
+          method="POST"
+        >
+          <div class="form-field">
+            <label for="name">
+              Author Name
+            </label>
+
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="For example: Ursula K. Le Guin"
+              required
+            >
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="birthdate">
+                Birthdate
+              </label>
+
+              <input
+                type="date"
+                id="birthdate"
+                name="birthdate"
+                required
+              >
+            </div>
+
+            <div class="form-field">
+              <label for="date_of_death">
+                Date of Death
+              </label>
+
+              <input
+                type="date"
+                id="date_of_death"
+                name="date_of_death"
+              >
+
+              <small class="form-hint">
+                Leave empty if the author is still alive.
+              </small>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              class="forum-button"
+              type="submit"
+            >
+              Add Author
+            </button>
+
+            <a
+              class="secondary-link"
+              href="{{ url_for('home') }}"
+            >
+              Return to My Library
+            </a>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
 </body>
 </html>

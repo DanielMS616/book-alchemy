@@ -2,89 +2,242 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Book Alchemy</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>My Library | Book Alchemy</title>
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}"
+  >
 </head>
 
 <body>
+  <div class="page-shell">
+    <header class="site-header forum-panel">
+      <p class="site-title">
+        Book Alchemy
+      </p>
 
-  <h1>My Library</h1>
+      <p class="site-subtitle">
+        A lovingly maintained corner for curious readers,
+        improbable journeys, and dangerously full bookshelves.
+      </p>
 
-  <p>
-    <a href="{{ url_for('catalog') }}">
-      Browse Book Catalog
-    </a>
-  </p>
+      <nav
+        class="main-navigation"
+        aria-label="Main navigation"
+      >
+        <a href="{{ url_for('home') }}">
+          My Library
+        </a>
 
-  {% with flashed_messages = get_flashed_messages() %}
-    {% if flashed_messages %}
-      {% for flashed_message in flashed_messages %}
-        <p>{{ flashed_message }}</p>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+        <a href="{{ url_for('catalog') }}">
+          Book Catalog
+        </a>
 
-  <form action="/" method="GET">
-    <label for="search">Search by title:</label>
+        <a href="{{ url_for('add_book') }}">
+          Add Book
+        </a>
 
-    <input
-      type="text"
-      id="search"
-      name="search"
-      value="{{ search_query }}"
-    >
+        <a href="{{ url_for('add_author') }}">
+          Add Author
+        </a>
+      </nav>
+    </header>
 
-    <button type="submit">Search</button>
-  </form>
+    <main>
+      {% with flashed_messages = get_flashed_messages() %}
+        {% for flashed_message in flashed_messages %}
+          <p class="flash-message forum-panel">
+            {{ flashed_message }}
+          </p>
+        {% endfor %}
+      {% endwith %}
 
-  <p>
-    Sort by:
-    <a href="/?sort=title">Title</a>
-    |
-    <a href="/?sort=author">Author</a>
-  </p>
-
-  {% if message %}
-    <p>{{ message }}</p>
-  {% else %}
-    {% for book in books %}
-      <div>
-        <h2>{{ book.title }}</h2>
-
-        {% if book.cover_path %}
-          <img
-            src="{{ url_for('static', filename=book.cover_path) }}"
-            alt="Cover of {{ book.title }}"
-            width="150"
-          >
-        {% else %}
-          <img
-            src="{{ url_for('static', filename='covers/default-cover.svg') }}"
-            alt="Default cover for {{ book.title }}"
-            width="150"
-          >
-        {% endif %}
+      <section class="catalog-controls forum-panel">
+        <h1>
+          My Library
+        </h1>
 
         <p>
-          Author: {{ book.author.name }}
-        </p>
-
-        <p>
-          ISBN: {{ book.isbn }}
-        </p>
-
-        <p>
-          Publication Year: {{ book.publication_year }}
+          Your personal collection of chosen books,
+          questionable adventures, and future reading plans.
         </p>
 
         <form
-          action="{{ url_for('delete_book', book_id=book.id) }}"
-          method="POST"
+          class="search-form"
+          method="GET"
+          action="{{ url_for('home') }}"
         >
-          <button type="submit">Delete Book</button>
-        </form>
-      </div>
-    {% endfor %}
-  {% endif %}
+          <div class="form-field">
+            <label for="search">
+              Search your library by title
+            </label>
 
+            <input
+              id="search"
+              name="search"
+              type="search"
+              value="{{ search_query }}"
+              placeholder="For example: Dune"
+            >
+          </div>
+
+          <div class="form-field">
+            <label for="sort">
+              Sort books by
+            </label>
+
+            <select
+              id="sort"
+              name="sort"
+            >
+              <option
+                value="title"
+                {% if sort_by == "title" %}selected{% endif %}
+              >
+                Title
+              </option>
+
+              <option
+                value="author"
+                {% if sort_by == "author" %}selected{% endif %}
+              >
+                Author
+              </option>
+            </select>
+          </div>
+
+          <button
+            class="forum-button"
+            type="submit"
+          >
+            Search Library
+          </button>
+        </form>
+      </section>
+
+      <p class="result-summary forum-panel">
+        {{ books|length }}
+        book{% if books|length != 1 %}s{% endif %}
+        in your library
+      </p>
+
+      {% if message %}
+        <p class="empty-message forum-panel">
+          {{ message }}
+        </p>
+
+      {% elif not books %}
+        <section class="empty-library forum-panel">
+          <h2>
+            Your bookshelf is waiting.
+          </h2>
+
+          <p>
+            The shelves are suspiciously empty.
+            Visit the catalog and adopt a few stories.
+          </p>
+
+          <a
+            class="forum-link-button"
+            href="{{ url_for('catalog') }}"
+          >
+            Browse Book Catalog
+          </a>
+        </section>
+
+      {% else %}
+        <section
+          class="books-grid"
+          aria-label="Personal library"
+        >
+          {% for book in books %}
+            <article class="book-card">
+              <div class="book-cover-frame">
+                {% if book.cover_path %}
+                  <img
+                    class="book-cover"
+                    src="{{ url_for(
+                      'static',
+                      filename=book.cover_path
+                    ) }}"
+                    alt="Cover of {{ book.title }}"
+                    loading="lazy"
+                  >
+                {% else %}
+                  <img
+                    class="book-cover"
+                    src="{{ url_for(
+                      'static',
+                      filename='covers/default-cover.svg'
+                    ) }}"
+                    alt="Default cover for {{ book.title }}"
+                    loading="lazy"
+                  >
+                {% endif %}
+              </div>
+
+              <div class="book-card-content">
+                <h2 class="book-title">
+                  {{ book.title }}
+                </h2>
+
+                <p class="book-author">
+                  {{ book.author.name }}
+                </p>
+
+                <ul class="book-details">
+                  <li>
+                    <strong>Category:</strong>
+                    {{ book.category or "Uncategorized" }}
+                  </li>
+
+                  {% if book.original_publication_year %}
+                    <li>
+                      <strong>First published:</strong>
+                      {{ book.original_publication_year }}
+                    </li>
+
+                  {% elif book.publication_year %}
+                    <li>
+                      <strong>Published:</strong>
+                      {{ book.publication_year }}
+                    </li>
+                  {% endif %}
+
+                  <li>
+                    <strong>ISBN:</strong>
+                    {{ book.isbn }}
+                  </li>
+                </ul>
+
+                <form
+                  class="book-card-form"
+                  action="{{ url_for(
+                    'delete_book',
+                    book_id=book.id
+                  ) }}"
+                  method="POST"
+                >
+                  <button
+                    class="forum-button danger-button"
+                    type="submit"
+                  >
+                    Remove from My Library
+                  </button>
+                </form>
+              </div>
+            </article>
+          {% endfor %}
+        </section>
+      {% endif %}
+    </main>
+  </div>
 </body>
 </html>

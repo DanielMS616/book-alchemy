@@ -1,0 +1,841 @@
+/*
+ * Book Alchemy
+ * -------------
+ * A modern-vintage interface inspired by old literature forums,
+ * dark wooden bookcases, brass details, and floral wallpaper.
+ */
+
+:root {
+    --charcoal: #211f19;
+    --charcoal-soft: #302b23;
+    --brown: #493023;
+
+    --cream: #f3e4bf;
+    --cream-muted: #d9c79f;
+    --paper: #e8d2a2;
+
+    --terracotta: #bc5b28;
+    --terracotta-dark: #7f351b;
+
+    --olive: #81825a;
+    --brass: #c3924e;
+    --brass-light: #e0b873;
+
+    --shadow-dark: rgba(11, 9, 7, 0.72);
+    --glass-dark: rgba(30, 27, 22, 0.82);
+}
+
+
+/* Makes element widths easier to calculate. */
+* {
+    box-sizing: border-box;
+}
+
+
+html {
+    min-height: 100%;
+}
+
+
+body {
+    min-height: 100vh;
+    margin: 0;
+
+    color: var(--cream);
+    background-color: var(--charcoal);
+
+    font-family:
+        "Trebuchet MS",
+        Arial,
+        sans-serif;
+
+    /*
+     * Creates a separate stacking context for the fixed
+     * wallpaper layers behind the page content.
+     */
+    position: relative;
+    isolation: isolate;
+}
+
+
+/*
+ * Fixed wallpaper layer.
+ *
+ * The image is repeated instead of enlarged with "cover".
+ * This preserves the visible floral pattern on desktop and mobile.
+ */
+body::before {
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        linear-gradient(
+            rgba(19, 17, 13, 0.08),
+            rgba(19, 17, 13, 0.16)
+        ),
+        url("../images/book-alchemy-wallpaper.jpeg")
+        top center / 540px auto repeat;
+
+    z-index: -2;
+}
+
+
+/*
+ * A very light vignette improves contrast near the screen edges
+ * without hiding the wallpaper in the center.
+ */
+body::after {
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            circle at center,
+            transparent 42%,
+            rgba(10, 8, 6, 0.24) 100%
+        );
+
+    pointer-events: none;
+    z-index: -1;
+}
+
+
+/* Uses almost the entire screen width on large displays. */
+.page-shell {
+    width: min(96vw, 1780px);
+    margin: 0 auto;
+    padding: 22px 0 52px;
+}
+
+
+/*
+ * Shared modern-vintage panel style.
+ *
+ * The slightly blurred dark surface is the modern element.
+ * Brass outlines and hard shadows create the retro character.
+ */
+.forum-panel {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(47, 41, 32, 0.88),
+            rgba(25, 23, 19, 0.84)
+        );
+
+    border: 1px solid var(--brass);
+    outline: 1px solid rgba(224, 184, 115, 0.38);
+    border-radius: 8px;
+
+    box-shadow:
+        6px 7px 0 var(--shadow-dark),
+        inset 0 1px 0 rgba(255, 235, 190, 0.12);
+
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+}
+
+
+/* ---------- Header and navigation ---------- */
+
+.site-header {
+    margin-bottom: 20px;
+    padding: 16px 20px;
+
+    text-align: center;
+}
+
+
+.site-title {
+    margin: 0;
+
+    color: #e7833f;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: clamp(2rem, 4vw, 3.3rem);
+    font-weight: normal;
+    letter-spacing: 0.09em;
+    line-height: 1;
+
+    text-shadow:
+        1px 1px 0 #130d09,
+        2px 2px 0 rgba(210, 145, 71, 0.28);
+}
+
+
+.site-subtitle {
+    max-width: 760px;
+    margin: 8px auto 16px;
+
+    color: var(--cream-muted);
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-style: italic;
+    line-height: 1.45;
+}
+
+
+.main-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 7px;
+}
+
+
+.main-navigation a {
+    display: inline-block;
+    padding: 8px 13px;
+
+    color: var(--cream);
+    background: rgba(17, 15, 12, 0.7);
+
+    border: 1px solid rgba(195, 146, 78, 0.75);
+    border-bottom: 3px solid var(--terracotta);
+    border-radius: 4px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        2px 2px 0 rgba(13, 10, 8, 0.58);
+
+    font-size: 0.88rem;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+
+    transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        transform 140ms ease;
+}
+
+
+.main-navigation a:hover,
+.main-navigation a:focus-visible {
+    color: #fff2d4;
+    background: rgba(127, 53, 27, 0.9);
+    border-color: var(--brass-light);
+
+    transform: translateY(-1px);
+}
+
+
+/* ---------- Search and sorting ---------- */
+
+.catalog-controls {
+    margin-bottom: 26px;
+    padding: 16px 18px;
+}
+
+
+.catalog-controls h1 {
+    margin: 0 0 7px;
+
+    color: #eca466;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: clamp(1.45rem, 3vw, 2rem);
+    font-weight: normal;
+}
+
+
+.catalog-controls p {
+    margin: 0 0 15px;
+    color: var(--cream-muted);
+}
+
+
+.search-form {
+    display: grid;
+
+    grid-template-columns:
+        minmax(220px, 1fr)
+        minmax(150px, 215px)
+        auto;
+
+    gap: 13px;
+    align-items: end;
+}
+
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+
+.form-field label {
+    color: var(--cream);
+    font-size: 0.88rem;
+    font-weight: bold;
+}
+
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 10px 11px;
+
+    color: var(--charcoal);
+    background:
+        linear-gradient(
+            #f5e7c5,
+            #ddc391
+        );
+
+    border: 1px solid #654326;
+    border-radius: 5px;
+
+    box-shadow:
+        inset 2px 2px 3px rgba(62, 40, 23, 0.24),
+        0 1px 0 rgba(255, 245, 214, 0.55);
+
+    font: inherit;
+}
+
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid var(--terracotta);
+    outline-offset: 2px;
+}
+
+
+/* ---------- Buttons ---------- */
+
+.forum-button {
+    min-height: 42px;
+    padding: 9px 14px;
+
+    color: #fff0d1;
+
+    background:
+        linear-gradient(
+            180deg,
+            #c96a32,
+            #8b3b1d
+        );
+
+    border: 1px solid #4f2818;
+    border-radius: 5px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 225, 177, 0.32),
+        2px 3px 0 rgba(19, 13, 9, 0.62);
+
+    font-family:
+        "Trebuchet MS",
+        Arial,
+        sans-serif;
+
+    font-weight: bold;
+    letter-spacing: 0.02em;
+
+    cursor: pointer;
+
+    transition:
+        filter 120ms ease,
+        transform 120ms ease,
+        box-shadow 120ms ease;
+}
+
+
+.forum-button:hover,
+.forum-button:focus-visible {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+
+.forum-button:active {
+    box-shadow:
+        inset 1px 2px 3px rgba(38, 19, 10, 0.45);
+
+    transform: translate(1px, 2px);
+}
+
+
+/* ---------- Messages and result counter ---------- */
+
+.flash-message,
+.result-summary,
+.empty-message {
+    margin: 0 0 22px;
+    padding: 11px 15px;
+}
+
+
+.flash-message {
+    color: #fff0d1;
+    border-left: 5px solid var(--terracotta);
+}
+
+
+.result-summary {
+    display: inline-block;
+
+    color: var(--cream);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 0.92rem;
+}
+
+
+.empty-message {
+    color: var(--cream);
+}
+
+
+/* ---------- Book grid ---------- */
+
+.books-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(190px, 1fr));
+
+    gap: clamp(21px, 2vw, 31px);
+    align-items: stretch;
+}
+
+
+/* ---------- Book cards ---------- */
+
+.book-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    /*
+     * The wallpaper remains faintly visible through the card,
+     * while the dark surface preserves readable text.
+     */
+    background:
+        linear-gradient(
+            155deg,
+            rgba(48, 42, 33, 0.83),
+            rgba(22, 20, 16, 0.87)
+        );
+
+    border: 1px solid var(--brass);
+    outline: 1px solid rgba(231, 178, 103, 0.34);
+    border-radius: 9px;
+
+    box-shadow:
+        6px 7px 0 var(--shadow-dark),
+        inset 0 1px 0 rgba(255, 230, 181, 0.1);
+
+    overflow: hidden;
+
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+
+    transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+
+.book-card:hover {
+    border-color: var(--brass-light);
+
+    box-shadow:
+        7px 9px 0 rgba(11, 9, 7, 0.78),
+        inset 0 1px 0 rgba(255, 230, 181, 0.14);
+
+    transform: translateY(-3px);
+}
+
+
+.book-cover-frame {
+    padding: 10px 10px 0;
+}
+
+
+.book-cover {
+    display: block;
+
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+
+    background: var(--charcoal-soft);
+
+    border: 1px solid var(--brass);
+    border-radius: 4px;
+
+    box-shadow:
+        0 4px 10px rgba(8, 6, 5, 0.62),
+        inset 0 0 0 1px rgba(255, 236, 197, 0.15);
+}
+
+
+.book-card-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+
+    padding: 13px;
+}
+
+
+.book-title {
+    margin: 0 0 7px;
+
+    color: #ee9a5d;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 1.12rem;
+    font-weight: normal;
+    line-height: 1.25;
+
+    text-shadow: 1px 1px 0 #140d09;
+}
+
+
+.book-author {
+    margin: 0 0 12px;
+
+    color: var(--cream);
+    font-size: 0.92rem;
+    font-weight: bold;
+    line-height: 1.35;
+}
+
+
+.book-details {
+    margin: 0 0 16px;
+    padding: 0;
+
+    color: var(--cream-muted);
+
+    list-style: none;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+
+/*
+ * The first list item contains the category.
+ * It becomes a small paper label instead of another text row.
+ */
+.book-details li:first-child {
+    display: inline-block;
+
+    width: fit-content;
+    margin-bottom: 9px;
+    padding: 4px 7px;
+
+    color: #36271d;
+    background: rgba(226, 201, 148, 0.94);
+
+    border: 1px solid #79512d;
+    border-radius: 3px;
+
+    box-shadow:
+        2px 2px 0 rgba(13, 10, 8, 0.45);
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+}
+
+
+.book-details li:not(:first-child) {
+    padding: 5px 0;
+
+    border-bottom:
+        1px dotted rgba(219, 196, 151, 0.38);
+}
+
+
+.book-details strong {
+    color: var(--olive);
+}
+
+
+.book-card-form {
+    margin-top: auto;
+}
+
+
+.book-card-form .forum-button {
+    width: 100%;
+}
+
+
+/* ---------- Tablet layout ---------- */
+
+@media (max-width: 900px) {
+    .books-grid {
+        grid-template-columns:
+            repeat(auto-fill, minmax(180px, 1fr));
+    }
+}
+
+
+/* ---------- Mobile layout ---------- */
+
+@media (max-width: 760px) {
+    body::before {
+        /*
+         * A smaller repeated pattern gives mobile screens
+         * a clearer impression of the complete wallpaper.
+         */
+        background:
+            linear-gradient(
+                rgba(19, 17, 13, 0.06),
+                rgba(19, 17, 13, 0.13)
+            ),
+            url("../images/book-alchemy-wallpaper.jpeg")
+            top center / 410px auto repeat;
+    }
+
+
+    body::after {
+        background:
+            radial-gradient(
+                circle at center,
+                transparent 52%,
+                rgba(10, 8, 6, 0.18) 100%
+            );
+    }
+
+
+    .page-shell {
+        width: 100%;
+        padding: 12px 0 42px;
+    }
+
+
+    .site-header,
+    .catalog-controls {
+        width: 92vw;
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+
+    .site-header {
+        margin-bottom: 17px;
+        padding: 13px 12px;
+    }
+
+
+    .site-subtitle {
+        /*
+         * The mobile header stays compact so more wallpaper
+         * and more of the first book card remain visible.
+         */
+        display: none;
+    }
+
+
+    .main-navigation {
+        gap: 6px;
+    }
+
+
+    .main-navigation a {
+        padding: 7px 10px;
+        font-size: 0.76rem;
+    }
+
+
+    .catalog-controls {
+        margin-bottom: 25px;
+        padding: 14px;
+    }
+
+
+    .search-form {
+        grid-template-columns: 1fr;
+    }
+
+
+    .result-summary {
+        margin-left: 6vw;
+    }
+
+
+    /*
+     * One narrower centered card leaves visible wallpaper
+     * on both sides of the mobile screen.
+     */
+    .books-grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+
+        gap: 34px;
+    }
+
+
+    .book-card {
+        width: min(86vw, 400px);
+    }
+
+
+    .book-cover-frame {
+        padding: 9px 9px 0;
+    }
+
+
+    .book-card-content {
+        padding: 12px;
+    }
+
+
+    .book-title {
+        font-size: 1.1rem;
+    }
+
+
+    .book-author {
+        font-size: 0.9rem;
+    }
+
+
+    .book-details {
+        font-size: 0.82rem;
+    }
+}
+
+
+/* ---------- Very narrow devices ---------- */
+
+@media (max-width: 390px) {
+    .site-header,
+    .catalog-controls {
+        width: 94vw;
+    }
+
+
+    .book-card {
+        width: 89vw;
+    }
+
+
+    .result-summary {
+        margin-left: 3vw;
+    }
+}
+
+
+/* ---------- Personal library additions ---------- */
+
+/*
+ * A darker red-brown variation distinguishes destructive actions
+ * without introducing a color that clashes with the wallpaper.
+ */
+.danger-button {
+    background:
+        linear-gradient(
+            180deg,
+            #9d4935,
+            #63271f
+        );
+
+    border-color: #3d1b17;
+}
+
+
+.danger-button:hover,
+.danger-button:focus-visible {
+    background:
+        linear-gradient(
+            180deg,
+            #b65b43,
+            #762e24
+        );
+}
+
+
+/*
+ * Empty-library message shown when no personal books exist.
+ */
+.empty-library {
+    width: min(92vw, 620px);
+    margin: 30px auto;
+    padding: 28px;
+
+    text-align: center;
+}
+
+
+.empty-library h2 {
+    margin-top: 0;
+
+    color: #eca466;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-weight: normal;
+}
+
+
+.empty-library p {
+    color: var(--cream-muted);
+    line-height: 1.6;
+}
+
+
+/*
+ * Link styled like the other interface buttons.
+ */
+.forum-link-button {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 10px 16px;
+
+    color: #fff0d1;
+
+    background:
+        linear-gradient(
+            180deg,
+            #c96a32,
+            #8b3b1d
+        );
+
+    border: 1px solid #4f2818;
+    border-radius: 5px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 225, 177, 0.32),
+        2px 3px 0 rgba(19, 13, 9, 0.62);
+
+    font-weight: bold;
+    text-decoration: none;
+}
+
+
+.forum-link-button:hover,
+.forum-link-button:focus-visible {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
