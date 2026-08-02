@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 from pathlib import Path
 
 # Base address used for all Open Library API requests.
@@ -62,6 +63,345 @@ def fetch_json(url):
         raise RuntimeError(
             "Open Library could not be reached."
         ) from error
+
+
+def fetch_books_by_isbns(isbns):
+    """Loads multiple books from the Open Library Search API."""
+
+    # The function expects a non-empty list of ISBN values.
+    if not isinstance(isbns, list) or not isbns:
+        raise ValueError(
+            "A non-empty list of ISBNs is required."
+        )
+
+    normalized_isbns = []
+
+    # Every ISBN is normalized with the same function
+    # used by the single-book import.
+    for isbn in isbns:
+        normalized_isbn = select_isbn([isbn])
+
+        if normalized_isbn is None:
+            raise ValueError(
+                f"Invalid ISBN in batch request: {isbn}"
+            )
+
+        # Avoids sending the same ISBN more than once.
+        if normalized_isbn not in normalized_isbns:
+            normalized_isbns.append(normalized_isbn)
+
+    # This is our own batch-size limit. It keeps requests
+    # controlled and prevents excessively long URLs.
+    if len(normalized_isbns) > 50:
+        raise ValueError(
+            "A batch may contain no more than 50 ISBNs."
+        )
+
+    # Creates a Solr query such as:
+    # isbn:(9780451524935 OR 9780060850524)
+    isbn_query = (
+        "isbn:("
+        + " OR ".join(normalized_isbns)
+        + ")"
+    )
+
+    # Only requests fields that are useful for our catalog.
+    fields = [
+        "key",
+        "title",
+        "author_name",
+        "author_key",
+        "first_publish_year",
+        "isbn",
+        "cover_i",
+        "first_sentence",
+        "editions",
+        "editions.key",
+        "editions.title",
+        "editions.isbn",
+        "editions.publish_date",
+        "editions.publisher",
+        "editions.language",
+        "editions.number_of_pages",
+        "editions.cover_i"
+    ]
+
+    # urlencode() safely converts the query parameters
+    # into a correctly encoded URL.
+    query_parameters = urlencode({
+        "q": isbn_query,
+        "fields": ",".join(fields),
+        "limit": len(normalized_isbns)
+    })
+
+    search_url = (
+        f"{OPEN_LIBRARY_BASE_URL}"
+        f"/search.json?{query_parameters}"
+    )
+
+    response_data = fetch_json(search_url)
+
+    if not isinstance(response_data, dict):
+        return []
+
+    search_results = response_data.get("docs", [])
+
+    if not isinstance(search_results, list):
+        return []
+
+    return search_results
+
+
+def convert_to_isbn13(isbn):
+    """Returns a normalized ISBN-13 for an ISBN-10 or ISBN-13."""
+
+    normalized_isbn = select_isbn([isbn])
+
+    if normalized_isbn is None:
+        return None
+
+    # An ISBN-13 can be returned without conversion.
+    if len(normalized_isbn) == 13:
+        return normalized_isbn
+
+    # Converts the first nine digits of an ISBN-10
+    # into the first twelve digits of an ISBN-13.
+    isbn13_without_check_digit = (
+        "978"
+        + normalized_isbn[:9]
+    )
+
+    checksum_total = 0
+
+    # ISBN-13 alternates between the multipliers 1 and 3.
+    for position, digit in enumerate(
+        isbn13_without_check_digit
+    ):
+        if position % 2 == 0:
+            multiplier = 1
+        else:
+            multiplier = 3
+
+        checksum_total += int(digit) * multiplier
+
+    check_digit = (
+        10 - checksum_total % 10
+    ) % 10
+
+    return (
+        isbn13_without_check_digit
+        + str(check_digit)
+    )
+
+
+def extract_first_integer(value):
+    """Returns the first usable integer from a value or list."""
+
+    # bool must be excluded because it is a subclass of int.
+    if isinstance(value, bool):
+        return None
+
+    if isinstance(value, int):
+        return value
+
+    if isinstance(value, str):
+        cleaned_value = value.strip()
+
+        if cleaned_value.isdigit():
+            return int(cleaned_value)
+
+        return None
+
+    if isinstance(value, list):
+        for item in value:
+            extracted_integer = extract_first_integer(item)
+
+            if extracted_integer is not None:
+                return extracted_integer
+
+    return None
+
+
+def find_matching_edition(search_result, requested_isbn):
+    """Finds the edition matching the requested ISBN."""
+
+    if not isinstance(search_result, dict):
+        return None
+
+    requested_isbn13 = convert_to_isbn13(
+        requested_isbn
+    )
+
+    if requested_isbn13 is None:
+        raise ValueError(
+            "A valid requested ISBN is required."
+        )
+
+    editions = search_result.get("editions")
+
+    if not isinstance(editions, dict):
+        return None
+
+    edition_documents = editions.get("docs", [])
+
+    if not isinstance(edition_documents, list):
+        return None
+
+    for edition_document in edition_documents:
+        if not isinstance(edition_document, dict):
+            continue
+
+        edition_isbns = edition_document.get(
+            "isbn",
+            []
+        )
+
+        if isinstance(edition_isbns, str):
+            edition_isbns = [edition_isbns]
+
+        for edition_isbn in edition_isbns:
+            edition_isbn13 = convert_to_isbn13(
+                edition_isbn
+            )
+
+            if edition_isbn13 == requested_isbn13:
+                return edition_document
+
+    return None
+
+
+def find_search_result_by_isbn(
+    search_results,
+    requested_isbn
+):
+    """Finds the search result containing the requested edition."""
+
+    if not isinstance(search_results, list):
+        return None
+
+    for search_result in search_results:
+        matching_edition = find_matching_edition(
+            search_result,
+            requested_isbn
+        )
+
+        if matching_edition is not None:
+            return search_result
+
+    return None
+
+
+def normalize_search_book(
+    search_result,
+    requested_isbn,
+    original_publication_year=None
+):
+    """Normalizes one book returned by the Search API."""
+
+    if not isinstance(search_result, dict):
+        return None
+
+    matching_edition = find_matching_edition(
+        search_result,
+        requested_isbn
+    )
+
+    if matching_edition is None:
+        return None
+
+    # Search API author keys do not always contain
+    # the complete "/authors/" path.
+    author_key = extract_first_text(
+        search_result.get("author_key")
+    )
+
+    if (
+        author_key
+        and not author_key.startswith("/authors/")
+    ):
+        author_key = (
+            f"/authors/{author_key.lstrip('/')}"
+        )
+
+    # The edition cover is preferred over the general work cover.
+    cover_id = (
+        extract_cover_id(
+            matching_edition.get("cover_i")
+        )
+        or extract_cover_id(
+            search_result.get("cover_i")
+        )
+    )
+
+    # Our manually checked year has priority.
+    if original_publication_year is not None:
+        selected_original_publication_year = (
+            original_publication_year
+        )
+    else:
+        selected_original_publication_year = (
+            extract_first_integer(
+                search_result.get(
+                    "first_publish_year"
+                )
+            )
+        )
+
+    return {
+        # Open Library references
+        "edition_key": extract_reference_key(
+            matching_edition.get("key")
+        ),
+        "work_key": extract_reference_key(
+            search_result.get("key")
+        ),
+        "author_key": author_key,
+
+        # Main book information
+        "title": (
+            extract_first_text(
+                matching_edition.get("title")
+            )
+            or extract_first_text(
+                search_result.get("title")
+            )
+        ),
+        "isbn": convert_to_isbn13(
+            requested_isbn
+        ),
+        "publication_year": extract_year(
+            matching_edition.get("publish_date")
+        ),
+        "original_publication_year": (
+            selected_original_publication_year
+        ),
+        "publisher": extract_first_text(
+            matching_edition.get("publisher")
+        ),
+        "language": extract_language(
+            matching_edition.get("language")
+        ),
+        "number_of_pages": extract_first_integer(
+            matching_edition.get(
+                "number_of_pages"
+            )
+        ),
+
+        # Author information
+        "author_name": extract_first_text(
+            search_result.get("author_name")
+        ),
+
+        # Cover information
+        "cover_id": cover_id,
+        "cover_url": build_cover_url(cover_id),
+
+        # The Search API may provide a first sentence,
+        # but not always a complete book description.
+        "source_description": extract_first_text(
+            search_result.get("first_sentence")
+        )
+    }
 
 
 def download_cover_image(cover_url, isbn):
