@@ -138,7 +138,7 @@ Activate it on Windows:
 ### 3. Install the dependencies
 
 ```bash
-python -m pip install Flask Flask-SQLAlchemy SQLAlchemy
+python -m pip install -r requirements.txt
 ```
 
 ## Database Setup
