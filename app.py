@@ -313,9 +313,24 @@ def add_book():
 
     # A POST request is sent when the book form is submitted.
     if request.method == "POST":
-        # Reads the submitted values from the form.
-        isbn = request.form.get("isbn")
-        title = request.form.get("title")
+        # Reads the submitted text values and removes
+        # accidental spaces at the beginning or end.
+        isbn = request.form.get("isbn", "").strip()
+        title = request.form.get("title", "").strip()
+
+        # Searches the personal library for the submitted ISBN.
+        # first() returns either the matching book or None.
+        existing_book = Book.query.filter_by(
+            isbn=isbn
+        ).first()
+
+        # Prevents the same ISBN from being added more than once.
+        if existing_book is not None:
+            flash(
+                f'A book with ISBN "{isbn}" already exists '
+                "in your library."
+            )
+            return redirect(url_for("add_book"))
 
         # Form values arrive as strings and are converted to integers.
         publication_year = int(
