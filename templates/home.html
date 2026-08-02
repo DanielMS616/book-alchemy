@@ -9,6 +9,12 @@
 
   <h1>My Library</h1>
 
+  <p>
+    <a href="{{ url_for('catalog') }}">
+      Browse Book Catalog
+    </a>
+  </p>
+
   {% with flashed_messages = get_flashed_messages() %}
     {% if flashed_messages %}
       {% for flashed_message in flashed_messages %}
@@ -44,11 +50,19 @@
       <div>
         <h2>{{ book.title }}</h2>
 
-        <img
-          src="https://covers.openlibrary.org/b/isbn/{{ book.isbn }}-M.jpg"
-          alt="Cover of {{ book.title }}"
-          width="150"
-        >
+        {% if book.cover_path %}
+          <img
+            src="{{ url_for('static', filename=book.cover_path) }}"
+            alt="Cover of {{ book.title }}"
+            width="150"
+          >
+        {% else %}
+          <img
+            src="{{ url_for('static', filename='covers/default-cover.svg') }}"
+            alt="Default cover for {{ book.title }}"
+            width="150"
+          >
+        {% endif %}
 
         <p>
           Author: {{ book.author.name }}

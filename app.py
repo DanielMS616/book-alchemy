@@ -1,9 +1,10 @@
 import os
 
+from sqlalchemy import or_
 from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, url_for
 
-from data_models import db, Author, Book
+from data_models import db, Author, Book, CatalogBook
 
 
 # Creates the Flask application.
@@ -70,6 +71,237 @@ def add_author():
 
     # A GET request displays the empty author form.
     return render_template("add_author.html")
+
+
+@app.route("/catalog")
+def catalog():
+    """Displays and searches the local discovery catalog."""
+
+    # Reads the search text from the URL.
+    # An empty string means that all catalog books are displayed.
+    search_query = request.args.get(
+        "search",
+        ""
+    ).strip()
+
+    # Reads the selected sorting option.
+    # Books are sorted alphabetically by title by default.
+    sort_by = request.args.get(
+        "sort",
+        "title"
+    )
+
+    # Starts a query for the discovery catalog.
+    # SQLAlchemy does not execute it until .all() is called.
+    catalog_query = CatalogBook.query
+
+    if search_query:
+        # Searches both title and author name.
+        #
+        # or_() means that a book is included when at least
+        # one of the two conditions matches.
+        catalog_query = catalog_query.filter(
+            or_(
+                CatalogBook.title.like(
+                    f"%{search_query}%"
+                ),
+                CatalogBook.author_name.like(
+                    f"%{search_query}%"
+                )
+            )
+        )
+
+    if sort_by == "author":
+        # Sorts first by author and then by title.
+        # The second criterion creates a stable order when
+        # several books were written by the same author.
+        catalog_query = catalog_query.order_by(
+            CatalogBook.author_name,
+            CatalogBook.title
+        )
+
+    elif sort_by == "category":
+        # Groups books alphabetically by category.
+        # Books inside each category are sorted by title.
+        catalog_query = catalog_query.order_by(
+            CatalogBook.category,
+            CatalogBook.title
+        )
+
+    else:
+        # Uses title sorting when no valid alternative was selected.
+        sort_by = "title"
+
+        catalog_query = catalog_query.order_by(
+            CatalogBook.title
+        )
+
+    # Executes the completed database query.
+    catalog_books = catalog_query.all()
+
+    message = None
+
+    if search_query and not catalog_books:
+        message = (
+            f'No catalog books found for '
+            f'"{search_query}".'
+        )
+
+    return render_template(
+        "catalog.html",
+        books=catalog_books,
+        search_query=search_query,
+        sort_by=sort_by,
+        message=message
+    )
+
+
+@app.route(
+    "/catalog/<int:catalog_book_id>/add",
+    methods=["POST"]
+)
+def add_catalog_book_to_library(catalog_book_id):
+    """Copies one catalog book into the personal library."""
+
+    # Loads the selected catalog entry by its primary key.
+    catalog_book = db.session.get(
+        CatalogBook,
+        catalog_book_id
+    )
+
+    # Keeps the current catalog search and sorting selection
+    # so the user returns to the same catalog view.
+    search_query = request.form.get(
+        "search",
+        ""
+    ).strip()
+
+    sort_by = request.form.get(
+        "sort",
+        "title"
+    )
+
+    if catalog_book is None:
+        flash("The selected catalog book could not be found.")
+
+        return redirect(
+            url_for(
+                "catalog",
+                search=search_query,
+                sort=sort_by
+            )
+        )
+
+    # First checks the stable Open Library work key.
+    # This prevents another edition of the same work from
+    # being added to the personal library more than once.
+    existing_book = None
+
+    if catalog_book.work_key:
+        existing_book = Book.query.filter_by(
+            work_key=catalog_book.work_key
+        ).first()
+
+    # ISBN is used as a fallback when no matching work key
+    # exists in the personal library.
+    if existing_book is None:
+        existing_book = Book.query.filter_by(
+            isbn=catalog_book.isbn
+        ).first()
+
+    if existing_book:
+        flash(
+            f'"{existing_book.title}" is already '
+            "in your library."
+        )
+
+        return redirect(
+            url_for(
+                "catalog",
+                search=search_query,
+                sort=sort_by
+            )
+        )
+
+    # Removes the HTML entity found in the imported Homer name.
+    # The catalog source data itself remains unchanged.
+    author_name = (
+        catalog_book.author_name
+        or "Unknown Author"
+    ).replace(
+        "&nbsp;",
+        " "
+    ).strip()
+
+    # Searches for an existing author using the stable
+    # Open Library author key whenever one is available.
+    author = None
+
+    if catalog_book.author_key:
+        author = Author.query.filter_by(
+            open_library_key=catalog_book.author_key
+        ).first()
+
+    # Author name is used as a fallback for catalog entries
+    # without an Open Library author key.
+    if author is None:
+        author = Author.query.filter_by(
+            name=author_name
+        ).first()
+
+    # Creates the author only when no matching author exists.
+    if author is None:
+        author = Author(
+            name=author_name,
+            open_library_key=catalog_book.author_key
+        )
+
+        db.session.add(author)
+
+    # Copies the reusable catalog data into a personal Book.
+    #
+    # Personal fields such as notes and is_favorite keep
+    # their model defaults and can be changed later.
+    new_book = Book(
+        isbn=catalog_book.isbn,
+        title=catalog_book.title,
+        publication_year=catalog_book.publication_year,
+        original_publication_year=(
+            catalog_book.original_publication_year
+        ),
+        summary=catalog_book.summary,
+        source_description=(
+            catalog_book.source_description
+        ),
+        category=catalog_book.category,
+        publisher=catalog_book.publisher,
+        language=catalog_book.language,
+        number_of_pages=catalog_book.number_of_pages,
+        cover_id=catalog_book.cover_id,
+        cover_url=catalog_book.cover_url,
+        cover_path=catalog_book.cover_path,
+        work_key=catalog_book.work_key,
+        edition_key=catalog_book.edition_key,
+
+        # Assigning the relationship connects the Book
+        # with either the existing or newly created Author.
+        author=author
+    )
+
+    db.session.add(new_book)
+    db.session.commit()
+
+    flash(
+        f'"{new_book.title}" was added to your library.'
+    )
+
+    return redirect(
+        url_for(
+            "catalog",
+            search=search_query,
+            sort=sort_by
+        )
+    )
 
 
 @app.route("/add_book", methods=["GET", "POST"])

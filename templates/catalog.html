@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Book Catalog</title>
+</head>
+
+<body>
+  <header>
+    <h1>Book Catalog</h1>
+
+    <nav>
+      <a href="{{ url_for('home') }}">
+        My Library
+      </a>
+
+      <a href="{{ url_for('catalog') }}">
+        Catalog
+      </a>
+    </nav>
+  </header>
+
+  <main>
+    <p>
+      Discover books from the local Book Alchemy catalog.
+    </p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for flash_message in messages %}
+          <p>{{ flash_message }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form
+      method="GET"
+      action="{{ url_for('catalog') }}"
+    >
+      <label for="search">
+        Search by title or author:
+      </label>
+
+      <input
+        id="search"
+        name="search"
+        type="search"
+        value="{{ search_query }}"
+        placeholder="For example: Odyssey or Homer"
+      >
+
+      <label for="sort">
+        Sort by:
+      </label>
+
+      <select
+        id="sort"
+        name="sort"
+      >
+        <option
+          value="title"
+          {% if sort_by == "title" %}selected{% endif %}
+        >
+          Title
+        </option>
+
+        <option
+          value="author"
+          {% if sort_by == "author" %}selected{% endif %}
+        >
+          Author
+        </option>
+
+        <option
+          value="category"
+          {% if sort_by == "category" %}selected{% endif %}
+        >
+          Category
+        </option>
+      </select>
+
+      <button type="submit">
+        Search
+      </button>
+    </form>
+
+    <p>
+      {{ books|length }} book{% if books|length != 1 %}s{% endif %}
+      found
+    </p>
+
+    {% if message %}
+      <p>{{ message }}</p>
+
+    {% else %}
+      {% for book in books %}
+        <article>
+          <h2>{{ book.title }}</h2>
+
+          {% if book.cover_path %}
+            <img
+              src="{{ url_for('static', filename=book.cover_path) }}"
+              alt="Cover of {{ book.title }}"
+              width="150"
+            >
+          {% else %}
+            <img
+              src="{{ url_for(
+                'static',
+                filename='covers/default-cover.svg'
+              ) }}"
+              alt="Default cover for {{ book.title }}"
+              width="150"
+            >
+          {% endif %}
+
+          <p>
+            Author: {{ book.author_name }}
+          </p>
+
+          <p>
+            Category: {{ book.category }}
+          </p>
+
+          {% if book.original_publication_year %}
+            <p>
+              Originally published:
+              {{ book.original_publication_year }}
+            </p>
+          {% endif %}
+
+          <p>
+            ISBN: {{ book.isbn }}
+          </p>
+
+          <form
+            method="POST"
+            action="{{ url_for(
+              'add_catalog_book_to_library',
+              catalog_book_id=book.id
+            ) }}"
+          >
+            <input
+              type="hidden"
+              name="search"
+              value="{{ search_query }}"
+            >
+
+            <input
+              type="hidden"
+              name="sort"
+              value="{{ sort_by }}"
+            >
+
+            <button type="submit">
+              Add to My Library
+            </button>
+          </form>
+
+        </article>
+      {% endfor %}
+    {% endif %}
+  </main>
+</body>
+</html>
