@@ -1,4 +1,53 @@
+import json
 from datetime import datetime
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+# Base address used for all Open Library API requests.
+OPEN_LIBRARY_BASE_URL = "https://openlibrary.org"
+
+# Identifies our educational application when making API requests.
+OPEN_LIBRARY_USER_AGENT = (
+    "BookAlchemy/0.1 (educational project)"
+)
+
+
+def fetch_json(url):
+    """Requests JSON data from an Open Library URL."""
+
+    # Creates an HTTP request with an identifying User-Agent.
+    request = Request(
+        url,
+        headers={
+            "User-Agent": OPEN_LIBRARY_USER_AGENT
+        }
+    )
+
+    try:
+        # Opens the URL and waits at most ten seconds
+        # for the server response.
+        with urlopen(request, timeout=10) as response:
+            return json.load(response)
+
+    except HTTPError as error:
+        # Open Library returns status code 404 when
+        # no record exists for the requested identifier.
+        if error.code == 404:
+            return None
+
+        # Other HTTP errors are converted into a clearer
+        # application-level error.
+        raise RuntimeError(
+            f"Open Library returned HTTP error {error.code}."
+        ) from error
+
+    except URLError as error:
+        # This handles connection problems such as
+        # missing internet access or an unreachable server.
+        raise RuntimeError(
+            "Open Library could not be reached."
+        ) from error
+
 
 def select_isbn(isbn_numbers):
     """Returns an ISBN-13 if available, otherwise an ISBN-10."""
@@ -563,3 +612,94 @@ def combine_book_data(
             "source_biography"
         )
     }
+
+
+def fetch_edition_by_isbn(isbn):
+    """Loads and normalizes an Open Library edition by ISBN."""
+
+    # Cleans the ISBN and checks whether its structure
+    # represents an ISBN-13 or ISBN-10.
+    cleaned_isbn = select_isbn([isbn])
+
+    if cleaned_isbn is None:
+        raise ValueError(
+            "A valid ISBN-13 or ISBN-10 is required."
+        )
+
+    edition_url = (
+        f"{OPEN_LIBRARY_BASE_URL}"
+        f"/isbn/{cleaned_isbn}.json"
+    )
+
+    # Requests the concrete edition from Open Library.
+    edition_response = fetch_json(edition_url)
+
+    # A missing ISBN record produces no normalized edition.
+    if edition_response is None:
+        return None
+
+    return normalize_edition_data(edition_response)
+
+
+def fetch_work_by_key(work_key):
+    """Loads and normalizes an Open Library work by its key."""
+
+    # A work key must be a non-empty string.
+    if not isinstance(work_key, str):
+        raise ValueError(
+            "A valid Open Library work key is required."
+        )
+
+    cleaned_work_key = work_key.strip()
+
+    # Open Library work references use paths such as:
+    # /works/OL1168083W
+    if not cleaned_work_key.startswith("/works/"):
+        raise ValueError(
+            "The Open Library work key must start with '/works/'."
+        )
+
+    work_url = (
+        f"{OPEN_LIBRARY_BASE_URL}"
+        f"{cleaned_work_key}.json"
+    )
+
+    # Requests the general work information.
+    work_response = fetch_json(work_url)
+
+    if work_response is None:
+        return None
+
+    return normalize_work_data(work_response)
+
+
+def fetch_author_by_key(author_key):
+    """Loads and normalizes an Open Library author by its key."""
+
+    # An author key must be a non-empty string.
+    if not isinstance(author_key, str):
+        raise ValueError(
+            "A valid Open Library author key is required."
+        )
+
+    cleaned_author_key = author_key.strip()
+
+    # Open Library author references use paths such as:
+    # /authors/OL118077A
+    if not cleaned_author_key.startswith("/authors/"):
+        raise ValueError(
+            "The Open Library author key must start with '/authors/'."
+        )
+
+    author_url = (
+        f"{OPEN_LIBRARY_BASE_URL}"
+        f"{cleaned_author_key}.json"
+    )
+
+    # Requests the author information.
+    author_response = fetch_json(author_url)
+
+    if author_response is None:
+        return None
+
+    return normalize_author_data(author_response)
