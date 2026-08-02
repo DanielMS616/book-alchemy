@@ -48,10 +48,39 @@ def add_catalog_book(seed_data):
 
     isbn = seed_data["isbn"]
 
-    # Stops early when this ISBN already exists in the local catalog.
-    existing_book = CatalogBook.query.filter_by(
-        isbn=isbn
-    ).first()
+    # The edition is loaded first because Open Library may return
+    # a different but equivalent ISBN format, such as ISBN-10
+    # instead of the ISBN-13 stored in the seed list.
+    edition_data = fetch_edition_by_isbn(isbn)
+
+    if edition_data is None:
+        print(f"No Open Library edition found for ISBN {isbn}.")
+        return False
+
+    # A catalog book represents one work and should not be added again
+    # merely because another ISBN format or edition was supplied.
+    existing_book = None
+
+    edition_key = edition_data.get("edition_key")
+
+    if edition_key:
+        existing_book = CatalogBook.query.filter_by(
+            edition_key=edition_key
+        ).first()
+
+    work_key = edition_data.get("work_key")
+
+    if existing_book is None and work_key:
+        existing_book = CatalogBook.query.filter_by(
+            work_key=work_key
+        ).first()
+
+    normalized_isbn = edition_data.get("isbn")
+
+    if existing_book is None and normalized_isbn:
+        existing_book = CatalogBook.query.filter_by(
+            isbn=normalized_isbn
+        ).first()
 
     if existing_book:
         print(
@@ -60,14 +89,8 @@ def add_catalog_book(seed_data):
         )
         return False
 
-    # Loads the concrete edition identified by the ISBN.
-    edition_data = fetch_edition_by_isbn(isbn)
-
-    if edition_data is None:
-        print(f"No Open Library edition found for ISBN {isbn}.")
-        return False
-
-    # Open Library asks clients not to send requests too quickly.
+    # A short pause prevents multiple API requests
+    # from being sent immediately after one another.
     sleep(1)
 
     # Loads the general work connected to the edition.
@@ -101,7 +124,8 @@ def add_catalog_book(seed_data):
         )
     )
 
-    # Downloads the Open Library cover into Flask's static directory.
+    # Downloads the cover into Flask's static directory.
+    # An existing local cover is reused.
     cover_path = download_cover_image(
         complete_book["cover_url"],
         complete_book["isbn"]
@@ -116,25 +140,17 @@ def add_catalog_book(seed_data):
         original_publication_year=complete_book[
             "original_publication_year"
         ],
-
-        # The original Open Library description remains unchanged.
         source_description=complete_book[
             "source_description"
         ],
-
-        # The standardized visible summary will be created later.
         summary=None,
-
         publisher=complete_book["publisher"],
         language=complete_book["language"],
         number_of_pages=complete_book["number_of_pages"],
         category=seed_data["category"],
-
         cover_id=complete_book["cover_id"],
         cover_url=complete_book["cover_url"],
-
         cover_path=cover_path,
-
         author_key=complete_book["author_key"],
         work_key=complete_book["work_key"],
         edition_key=complete_book["edition_key"]
@@ -155,26 +171,54 @@ def seed_catalog():
     """Adds all configured seed books to the local catalog."""
 
     created_books = 0
+    skipped_books = 0
+    failed_books = 0
 
-    # enumerate(..., start=1) provides both the current position
+    # enumerate(..., start=1) returns both the current position
     # and the corresponding seed dictionary.
     for position, seed_data in enumerate(
         SEED_BOOKS,
         start=1
     ):
+        isbn = seed_data.get("isbn", "unknown ISBN")
+
         print(
             f"Processing book {position} of "
             f"{len(SEED_BOOKS)}..."
         )
 
-        if add_catalog_book(seed_data):
+        try:
+            # add_catalog_book() returns True when a new book
+            # was created and False when it was skipped.
+            book_was_created = add_catalog_book(seed_data)
+
+        except Exception as error:
+            # A failed database operation can leave the current
+            # SQLAlchemy session in an unusable state.
+            # rollback() returns it to the last valid state.
+            db.session.rollback()
+
+            failed_books += 1
+
+            print(
+                f"Catalog entry failed for ISBN {isbn}: "
+                f"{type(error).__name__}: {error}"
+            )
+
+            # continue skips the remaining code of this loop
+            # iteration and starts processing the next book.
+            continue
+
+        if book_was_created:
             created_books += 1
+        else:
+            skipped_books += 1
 
     print()
-    print(
-        f"Catalog seeding completed. "
-        f"{created_books} new book(s) added."
-    )
+    print("Catalog seeding completed.")
+    print(f"Created: {created_books}")
+    print(f"Skipped: {skipped_books}")
+    print(f"Failed:  {failed_books}")
 
 
 if __name__ == "__main__":
