@@ -439,9 +439,3 @@ def home():
         search_query=search_query,
         message=message
     )
-
-
-# Creates all database tables defined by the SQLAlchemy models.
-# The application context gives SQLAlchemy access to the Flask configuration.
-# with app.app_context():
-#     db.create_all()
