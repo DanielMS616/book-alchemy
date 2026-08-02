@@ -649,11 +649,12 @@ def combine_book_data(
         or work_data.get("cover_url")
     )
 
-    # The direct work endpoint may not contain an original publication year.
-    # A year from the Search API can therefore be passed as a fallback.
-    work_publication_year = (
-        work_data.get("original_publication_year")
-        or original_publication_year
+    # A manually supplied and checked publication year has priority.
+    # If no year was supplied, the value from the work data is used.
+    selected_original_publication_year = (
+        original_publication_year
+        if original_publication_year is not None
+        else work_data.get("original_publication_year")
     )
 
     return {
@@ -672,7 +673,9 @@ def combine_book_data(
         "publication_year": edition_data.get(
             "publication_year"
         ),
-        "original_publication_year": work_publication_year,
+        "original_publication_year": (
+            selected_original_publication_year
+        ),
         "publisher": edition_data.get("publisher"),
         "language": edition_data.get("language"),
         "number_of_pages": edition_data.get(

@@ -19,6 +19,26 @@ SEED_BOOKS = [
         "isbn": "9780451524935",
         "category": "Classics",
         "original_publication_year": 1949
+    },
+    {
+        "isbn": "9780060850524",
+        "category": "Science Fiction",
+        "original_publication_year": 1932
+    },
+    {
+        "isbn": "9781451673319",
+        "category": "Science Fiction",
+        "original_publication_year": 1953
+    },
+    {
+        "isbn": "9780547928227",
+        "category": "Fantasy",
+        "original_publication_year": 1937
+    },
+    {
+        "isbn": "9780316769488",
+        "category": "Classics",
+        "original_publication_year": 1951
     }
 ]
 
