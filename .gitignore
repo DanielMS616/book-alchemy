@@ -23,3 +23,5 @@ data/*.sqlite
 .guides/
 .settings
 api_samples/
+static/covers/catalog/*
+!static/covers/catalog/.gitkeep

@@ -4,6 +4,7 @@ from app import app
 from data_models import CatalogBook, db
 from open_library_service import (
     combine_book_data,
+    download_cover_image,
     fetch_author_by_key,
     fetch_edition_by_isbn,
     fetch_work_by_key
@@ -80,6 +81,12 @@ def add_catalog_book(seed_data):
         )
     )
 
+    # Downloads the Open Library cover into Flask's static directory.
+    cover_path = download_cover_image(
+        complete_book["cover_url"],
+        complete_book["isbn"]
+    )
+
     # Creates the database object for the local discovery catalog.
     catalog_book = CatalogBook(
         isbn=complete_book["isbn"],
@@ -106,8 +113,7 @@ def add_catalog_book(seed_data):
         cover_id=complete_book["cover_id"],
         cover_url=complete_book["cover_url"],
 
-        # The cover has not yet been downloaded locally.
-        cover_path=None,
+        cover_path=cover_path,
 
         author_key=complete_book["author_key"],
         work_key=complete_book["work_key"],

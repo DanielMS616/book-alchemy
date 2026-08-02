@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from pathlib import Path
 
 # Base address used for all Open Library API requests.
 OPEN_LIBRARY_BASE_URL = "https://openlibrary.org"
@@ -9,6 +10,20 @@ OPEN_LIBRARY_BASE_URL = "https://openlibrary.org"
 # Identifies our educational application when making API requests.
 OPEN_LIBRARY_USER_AGENT = (
     "BookAlchemy/0.1 (educational project)"
+)
+
+# Absolute local directory in which catalog covers are stored.
+CATALOG_COVER_DIRECTORY = (
+    Path(__file__).resolve().parent
+    / "static"
+    / "covers"
+    / "catalog"
+)
+
+# Relative path used later by Flask's static file handling.
+CATALOG_COVER_RELATIVE_DIRECTORY = (
+    Path("covers")
+    / "catalog"
 )
 
 
@@ -47,6 +62,79 @@ def fetch_json(url):
         raise RuntimeError(
             "Open Library could not be reached."
         ) from error
+
+
+def download_cover_image(cover_url, isbn):
+    """Downloads a catalog cover and returns its relative static path."""
+
+    # A book without an available cover URL cannot be downloaded.
+    if not cover_url:
+        return None
+
+    # Normalizes the ISBN so that the generated file name
+    # contains no spaces or hyphens.
+    cleaned_isbn = select_isbn([isbn])
+
+    if cleaned_isbn is None:
+        raise ValueError(
+            "A valid ISBN is required for the cover file name."
+        )
+
+    # Ensures that the destination directory exists.
+    CATALOG_COVER_DIRECTORY.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    file_name = f"{cleaned_isbn}.jpg"
+
+    absolute_file_path = (
+        CATALOG_COVER_DIRECTORY
+        / file_name
+    )
+
+    relative_file_path = (
+        CATALOG_COVER_RELATIVE_DIRECTORY
+        / file_name
+    )
+
+    # Avoids downloading the same cover repeatedly.
+    if absolute_file_path.exists():
+        return relative_file_path.as_posix()
+
+    request = Request(
+        cover_url,
+        headers={
+            "User-Agent": OPEN_LIBRARY_USER_AGENT
+        }
+    )
+
+    try:
+        with urlopen(request, timeout=10) as response:
+            image_data = response.read()
+
+    except HTTPError as error:
+        if error.code == 404:
+            return None
+
+        raise RuntimeError(
+            f"Open Library returned HTTP error {error.code} "
+            "while downloading the cover."
+        ) from error
+
+    except URLError as error:
+        raise RuntimeError(
+            "The Open Library cover could not be downloaded."
+        ) from error
+
+    # An empty response should not create an empty image file.
+    if not image_data:
+        return None
+
+    absolute_file_path.write_bytes(image_data)
+
+    # as_posix() produces a Flask-friendly path with forward slashes.
+    return relative_file_path.as_posix()
 
 
 def select_isbn(isbn_numbers):
